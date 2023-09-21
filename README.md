@@ -1,66 +1,43 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+In Laravel, job queues are used to handle tasks asynchronously, such as sending emails, processing uploaded files, or performing other time-consuming tasks in the background. Laravel provides a built-in queue system that allows you to push jobs onto queues and then have separate worker processes process those jobs.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Here's how Supervisord is typically used with Laravel job queues:
 
-## About Laravel
+1. Installation: First, you need to install Supervisord on your server if it's not already installed. You can do this using your system's package manager. For example, on Ubuntu, you can use `apt-get`:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+`sudo apt-get install supervisor`
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. Configuration: You need to configure Supervisord to manage your Laravel Queue Worker processes. You do this by creating a Supervisor configuration file (often with a `.conf` extension) that defines how many worker processes to run and how to run them.
 
-## Learning Laravel
+Here's an example of a basic Supervisor configuration file for Laravel Queue Workers:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/artisan queue:work --sleep=3 --tries=3
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/path/to/your/log/worker.log
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+In this configuration:
+- `laravel-worker` is the name of the Supervisor program.
+- The `command` specifies how to run the Laravel Queue Worker.
+- `autostart` and `autorestart` control whether the worker process should start
+     automatically and restart if it crashes.
+- `stdout_logfile` specifies where to log the output of the worker.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-## Laravel Sponsors
+3. Starting Supervisor: Once you have created your Supervisor configuration file, 
+    you can start Supervisor and have it manage your Laravel Queue Worker processes:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+`sudo supervisorctl reread`
+`sudo supervisorctl update`
+`sudo supervisorctl start laravel-worker`
 
-### Premium Partners
+This will start the Laravel Queue Worker processes and keep them running in the background.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
 
-## Contributing
+4. Monitoring: You can monitor the status of your Supervisor-managed processes using commands like 
+`sudo supervisorctl status` or check the log files specified in your Supervisor configuration.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Using Supervisord with Laravel job queues helps ensure that your queue workers are running continuously, processing jobs as they are pushed onto the queue, and automatically recovering from failures. It's an essential tool for handling background processing in Laravel applications efficiently.
